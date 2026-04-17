@@ -1,0 +1,98 @@
+import random
+
+def build_tree(level, values, start, end, maximize, stats):
+    stats["visited"] += 1
+
+    if start == end:
+        return values[start]
+
+    mid = (start + end) // 2
+
+    if maximize:
+        left_value = build_tree(level + 1, values, start, mid, False, stats)
+        right_value = build_tree(level + 1, values, mid + 1, end, False, stats)
+
+        if left_value > right_value:
+            return left_value
+        return right_value
+
+    left_value = build_tree(level + 1, values, start, mid, True, stats)
+    right_value = build_tree(level + 1, values, mid + 1, end, True, stats)
+
+    if left_value < right_value:
+        return left_value
+    return right_value
+
+
+def alpha_beta_search(level, values, start, end, maximize, alpha, beta, stats):
+    stats["visited"] += 1
+
+    if start == end:
+        return values[start]
+
+    mid = (start + end) // 2
+
+    if maximize:
+        best = float("-inf")
+
+        left_value = alpha_beta_search(level + 1, values, start, mid, False, alpha, beta, stats)
+        if left_value > best:
+            best = left_value
+        if best > alpha:
+            alpha = best
+
+        if beta <= alpha:
+            stats["pruned"] += 1
+            return best
+
+        right_value = alpha_beta_search(level + 1, values, mid + 1, end, False, alpha, beta, stats)
+        if right_value > best:
+            best = right_value
+        if best > alpha:
+            alpha = best
+
+        return best
+
+    best = float("inf")
+
+    left_value = alpha_beta_search(level + 1, values, start, mid, True, alpha, beta, stats)
+    if left_value < best:
+        best = left_value
+    if best < beta:
+        beta = best
+
+    if beta <= alpha:
+        stats["pruned"] += 1
+        return best
+
+    right_value = alpha_beta_search(level + 1, values, mid + 1, end, True, alpha, beta, stats)
+    if right_value < best:
+        best = right_value
+    if best < beta:
+        beta = best
+
+    return best
+
+
+leaf_count = 9
+leaf_values = []
+
+for _ in range(leaf_count):
+    leaf_values.append(random.randint(1, 50))
+
+minimax_stats = {"visited": 0}
+alphabeta_stats = {"visited": 0, "pruned": 0}
+
+minimax_result = build_tree(0, leaf_values, 0, leaf_count - 1, True, minimax_stats)
+alphabeta_result = alpha_beta_search(0, leaf_values, 0, leaf_count - 1, True, float("-inf"), float("inf"), alphabeta_stats)
+
+improvement = ((minimax_stats["visited"] - alphabeta_stats["visited"]) / minimax_stats["visited"]) * 100
+
+print("Generated Leaf Nodes:", leaf_values)
+print("Minimax:")
+print("    Nodes Evaluated:", minimax_stats["visited"])
+print("    Optimal Value:", minimax_result)
+print("Alpha-Beta Pruning:")
+print("    Nodes Evaluated:", alphabeta_stats["visited"])
+print("    Nodes Pruned:", alphabeta_stats["pruned"])
+print("Efficiency Improvement:", round(improvement, 2), "%")
